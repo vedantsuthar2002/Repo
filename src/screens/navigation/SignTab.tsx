@@ -4,6 +4,7 @@ import TabNavigatorScreen from './TabNavigatorScreen';
 import SignNavigation from './SignNavigation';
 import SplashScreen from '../loginScreens/SplashScreen';
 import RecipeDetailsScreen from '../components/RecipeDetailsScreen';
+import OnboardingScreen from '../components/OnboardingScreen';
 
 const Stack = createStackNavigator();
 
@@ -11,6 +12,7 @@ const SignTab: React.FC = () => {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name='Splash' component={SplashScreen} />
+            <Stack.Screen name='Onboarding' component={OnboardingScreen} />
             <Stack.Screen name="Sign" component={SignNavigation} />
             <Stack.Screen name="Tab" component={TabNavigatorScreen} />
         </Stack.Navigator>

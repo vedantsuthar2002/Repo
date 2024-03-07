@@ -6,7 +6,6 @@ import SplashScreen from 'react-native-splash-screen';
 import { createStackNavigator } from '@react-navigation/stack';
 import SignTab from './src/screens/navigation/SignTab';
 
-const Stack = createStackNavigator();
 const App: React.FC = () => {
   useEffect(() => {
     SplashScreen.hide();

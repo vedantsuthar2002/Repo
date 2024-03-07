@@ -100,6 +100,7 @@ const SearchScreen: React.FC = () => {
         onSubmitEditing={handleSearch}
       />
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={searchText.length > 0 ? searchResults : recipes}
         renderItem={renderRecipeItem}
         keyExtractor={item => item.id.toString()}

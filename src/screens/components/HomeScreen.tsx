@@ -33,6 +33,25 @@ const HomeScreen: React.FC = () => {
     }
   );
 
+  const fetchUsername = () => {
+    db.transaction(tx => {
+      tx.executeSql(
+        'SELECT Name FROM Users LIMIT 1',
+        [],
+        (_, { rows }) => {
+          const username: string[] = [];
+          for (let i = 0; i < rows.length; i++) {
+            const { Name } = rows.item(i);
+            username.push(Name);
+          }
+          setUserName(username);
+        },
+        error => console.error('Error fetching usernames:', error)
+      );
+    });
+  };
+
+
   const fetchRecipes = () => {
     db.transaction(tx => {
       tx.executeSql(
@@ -53,7 +72,7 @@ const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     fetchRecipes();
-    setUserName('John Doe');
+    fetchUsername();
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
       setGreeting('Good Morning');
@@ -100,7 +119,7 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <View style={styles.header}>
-        <Image source={require('../../assets/images/Logo.png')} style={styles.userPhoto} />
+        <Image source={require('../../assets/images/user.png')} style={styles.userPhoto} />
         <View style={styles.greetingContainer}>
           <Text style={styles.welcomeText}>Welcome, {userName}</Text>
           <Text style={styles.greetingText}>{greeting}</Text>
@@ -108,6 +127,7 @@ const HomeScreen: React.FC = () => {
       </View>
 
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={recipes}
         renderItem={renderRecipeItem}
         keyExtractor={item => item.id.toString()}
@@ -138,7 +158,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#0F172A',
   },
   greetingText: {
     fontSize: 14,
