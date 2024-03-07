@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import SQLite from 'react-native-sqlite-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -20,8 +20,13 @@ interface RecipeDetailsProps {
 const RecipeDetailsScreen: React.FC<RecipeDetailsProps> = ({ route }) => {
   const { recipe } = route.params;
   const navigation = useNavigation();
+  const [recipeAlreadySaved, setRecipeAlreadySaved] = useState<boolean>(false);
 
-  const handleSaveRecipe = () => {
+  useEffect(() => {
+    checkIfRecipeAlreadySaved();
+  }, []);
+
+  const checkIfRecipeAlreadySaved = () => {
     const db = SQLite.openDatabase(
       {
         name: 'MainDB.db',
@@ -36,28 +41,52 @@ const RecipeDetailsScreen: React.FC<RecipeDetailsProps> = ({ route }) => {
     );
 
     db.transaction(tx => {
-      // Create SavedRecipes table if it doesn't exist
       tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS SavedRecipes (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, portion INTEGER, cooking_time INTEGER)',
-        [],
-        () => {
-          console.log('Table created successfully.');
+        'SELECT * FROM SavedRecipes WHERE title = ?',
+        [recipe.title],
+        (_, { rows }) => {
+          if (rows.length > 0) {
+            setRecipeAlreadySaved(true);
+          }
         },
-        error => console.error('Error creating table:', error)
-      );
-
-      // Insert the recipe into SavedRecipes table
-      tx.executeSql(
-        'INSERT INTO SavedRecipes (title, description, portion, cooking_time) VALUES (?, ?, ?, ?)',
-        [recipe.title, recipe.description, recipe.portion, recipe.cooking_time],
-        () => {
-          console.log('Recipe saved successfully.');
-          // Navigate to SaveRecipeScreen after saving the recipe
-          navigation.navigate('Save');
-        },
-        error => console.error('Error saving recipe:', error)
+        error => console.error('Error checking if recipe already saved:', error)
       );
     });
+  };
+
+  const handleSaveRecipe = () => {
+    if (!recipeAlreadySaved) {
+      const db = SQLite.openDatabase(
+        {
+          name: 'MainDB.db',
+          location: 'default',
+        },
+        () => {
+          console.log('Database opened successfully.');
+        },
+        error => {
+          console.error('Database not open', error);
+        }
+      );
+
+      db.transaction(tx => {
+        // Insert the recipe into SavedRecipes table
+        tx.executeSql(
+          'INSERT INTO SavedRecipes (title, description, portion, cooking_time) VALUES (?, ?, ?, ?)',
+          [recipe.title, recipe.description, recipe.portion, recipe.cooking_time],
+          () => {
+            console.log('Recipe saved successfully.');
+            setRecipeAlreadySaved(true); // Set flag indicating recipe is saved
+            // Navigate to SaveRecipeScreen after saving the recipe
+            navigation.navigate('Save');
+          },
+          error => console.error('Error saving recipe:', error)
+        );
+      });
+    } else {
+      console.log('Recipe already saved.');
+      // Show a message to the user indicating that the recipe is already saved
+    }
   };
 
   return (

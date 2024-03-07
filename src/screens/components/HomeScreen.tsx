@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; // Import useNavigation hook
+import { FlatList, Image, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useIsFocused, useNavigation } from '@react-navigation/native'; // Import useIsFocused hook
 import SQLite from 'react-native-sqlite-storage';
 import RecipeDetailsScreen from './RecipeDetailsScreen';
 
@@ -14,10 +14,12 @@ interface Recipe {
 
 const HomeScreen: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState<Recipe[]>([]);
   const [userName, setUserName] = useState<string>('');
   const [greeting, setGreeting] = useState<string>('');
   const [savedRecipes, setSavedRecipes] = useState<number[]>([]);
-
+  const isFocused = useIsFocused(); // Initialize isFocused hook
   const navigation = useNavigation(); // Initialize navigation hook
 
   const db = SQLite.openDatabase(
@@ -71,7 +73,6 @@ const HomeScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchRecipes();
     fetchUsername();
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
@@ -82,6 +83,17 @@ const HomeScreen: React.FC = () => {
       setGreeting('Good Evening');
     }
   }, []);
+
+  useEffect(() => {
+    if (isFocused) { // Fetch recipes data only when HomeScreen is focused
+      fetchRecipes();
+    }
+  }, [isFocused]);
+
+  const handleSearch = () => {
+    const results = recipes.filter(recipe => recipe.title.toLowerCase().includes(searchText.toLowerCase()));
+    setSearchResults(results);
+  };
 
   const handleSaveRecipe = (recipeId: number) => {
     if (savedRecipes.includes(recipeId)) {
@@ -102,10 +114,12 @@ const HomeScreen: React.FC = () => {
 
   const renderRecipeItem = ({ item }: { item: Recipe }) => (
     <TouchableOpacity style={styles.recipeItem} onPress={() => handleRecipePress(item)}>
-      <Text style={styles.recipeTitle}>{item.title}</Text>
-      <Text style={styles.recipeDescription}>{item.description}</Text>
-      <Text style={styles.recipeDetails}>Portion: {item.portion}</Text>
-      <Text style={styles.recipeDetails}>Cooking Time: {item.cooking_time} minutes</Text>
+      <View >
+        <Text style={styles.recipeTitle}>{item.title}</Text>
+        <Text style={styles.recipeDescription}>{item.description}</Text>
+        <Text style={styles.recipeDetails}>Portion: {item.portion}</Text>
+        <Text style={styles.recipeDetails}>Cooking Time: {item.cooking_time} minutes</Text>
+      </View>
       <TouchableOpacity onPress={() => handleSaveRecipe(item.id)}>
         <Image
           source={isRecipeSaved(item.id) ? require('../../assets/filled-heart-icon.png') : require('../../assets/empty-heart-icon.png')}
@@ -125,6 +139,13 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.greetingText}>{greeting}</Text>
         </View>
       </View>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Type ingredients..."
+        value={searchText}
+        onChangeText={text => setSearchText(text)}
+        onSubmitEditing={handleSearch}
+      />
 
       <FlatList
         showsVerticalScrollIndicator={false}
@@ -140,6 +161,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: '#FFF'
+  },
+  searchInput: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    padding: 10,
+    marginBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -165,10 +195,14 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   recipeItem: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: '#FFF',
+    borderRadius: 5,
+    borderColor: '#E8E8E8',
+    borderWidth: 1,
     padding: 10,
     marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
   },
   recipeTitle: {
     fontSize: 18,
@@ -178,6 +212,7 @@ const styles = StyleSheet.create({
   recipeDescription: {
     fontSize: 16,
     marginBottom: 5,
+    maxWidth: '90%'
   },
   recipeDetails: {
     fontSize: 14,
@@ -186,8 +221,9 @@ const styles = StyleSheet.create({
   heartIcon: {
     width: 24,
     height: 24,
-    marginLeft: 'auto',
     tintColor: 'red',
+    justifyContent: 'flex-end',
+    right: 2,
   },
 });
 
